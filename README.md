@@ -9,5 +9,5 @@ and rip files using up and down arrows and submitting through hitting enter.
 # Usage
 **in jrip dir run: 'cargo run'**
 
-# Insporation / Guide
+# Inspiration / Guide
 https://www.youtube.com/watch?v=2CQ4hLB2IMw&t=1150s

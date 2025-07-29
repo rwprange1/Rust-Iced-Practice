@@ -1,12 +1,13 @@
 mod utils;
 
 use std::env::{current_dir, set_current_dir};
+use std::fmt::format;
 use std::path;
 use std::path::{PathBuf, Path};
 
 use iced::{widget::{button, column, text, row}, window, Color, Element, Fill, Subscription, Task, Theme, keyboard};
 use iced::keyboard::key::Named;
-use iced::widget::Column;
+use iced::widget::{horizontal_rule, Column};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 enum Message {
@@ -14,6 +15,7 @@ enum Message {
     Up,
     Down,
     Enter,
+    Ret,
 }
 const MAX_FILES: usize = 22;
 const RED: Color = Color::from_rgb(1.0, 0.0, 0.0);
@@ -26,6 +28,8 @@ struct AppState {
     current_dir: PathBuf,
     current_files: Vec<(String,bool)>,
     selected_file: i8,
+    success: bool,
+    ran: bool,
 }
 
 impl Default for AppState {
@@ -37,6 +41,8 @@ impl Default for AppState {
             current_dir,
             current_files,
             selected_file: 0,
+            success: false,
+            ran: false
         }
     }
 }
@@ -45,12 +51,31 @@ impl AppState {
     
 
     fn view(&self) -> Element<Message> {
+        let file = format!("{} ", self.current_files[self.selected_file as usize].0);
+        if self.ran{
+            let (col,val) = if self.success {
+                (GREEN, "Successful Audio Rip")
+            }else{
+                (RED, "Audio Rip Failed")
+            };
+            return row![
+                text("File 2 Rip: ").size(25),
+                text(file).size(25).color(BLUE),
+                text(val).size(25).color(col).width(Fill),
+                button("Click Me To Return To JRIP").on_press(Message::Ret),
+               
+                
+            ].into();
+            
+        };
+        
         // Top row: current directory + Exit button
         let header = row![
             text(self.current_dir.to_str().unwrap()).size(24).width(Fill),
             button(text("Exit").size(20)).on_press(Message::Exit),
+            
         ].spacing(8);
-
+        
         let mut columns: Vec<Column<Message>> = vec![];
         let mut current_column = column![];
         let mut count = 0;
@@ -87,6 +112,7 @@ impl AppState {
         
         column![
             header.width(Fill),
+            horizontal_rule(2),
             file_columns
         ]
         .spacing(16)
@@ -135,8 +161,18 @@ impl AppState {
                         self.current_dir = path::absolute(&path).unwrap();
                         self.selected_file = 0;
                         self.current_files = utils::get_files(&self.current_dir);
-                        println!("Current Dir: {}\nNum Files: {}", self.current_dir.display(), self.current_files.len());
+                    }else{
+                        self.ran = true;
+                        self.success = utils::rip_it(
+                            &self.current_files[self.selected_file as usize].0,
+                            &self.current_dir
+                        );
                     }
+                    Task::none()
+                },
+                Message::Ret => {
+                    self.ran = false;
+                    self.success = false;
                     Task::none()
                 }
             }
